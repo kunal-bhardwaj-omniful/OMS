@@ -2,9 +2,12 @@ package sqs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/omniful/go_commons/csv"
 	"github.com/omniful/go_commons/sqs"
 	"log"
+	"oms/domain/models"
 	psqs "oms/pkg/sqs"
 )
 
@@ -20,11 +23,48 @@ func (h *ExampleHandler) Process(ctx context.Context, message *[]sqs.Message) er
 
 		}
 	}
+
 	return nil
 }
 
 func (h *ExampleHandler) Handle(msg *sqs.Message) error {
 	fmt.Println("Processing message:", string(msg.Value))
+
+	var b models.BulkOrderEvent
+
+	// Unmarshal the message body into the struct
+	err := json.Unmarshal([]byte(msg.Value), &b)
+	if err != nil {
+		fmt.Println("Error unmarshaling message:", err)
+		return err
+	}
+
+	csvReader, err := csv.NewCommonCSV(
+		csv.WithBatchSize(100),
+		csv.WithSource(csv.Local),
+		csv.WithLocalFileInfo(b.FilePath),
+		csv.WithHeaderSanitizers(csv.SanitizeAsterisks, csv.SanitizeToLower),
+		csv.WithDataRowSanitizers(csv.SanitizeSpace, csv.SanitizeToLower),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = csvReader.InitializeReader(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for !csvReader.IsEOF() {
+		var records csv.Records
+		records, err = csvReader.ReadNextBatch()
+		if err != nil {
+			log.Fatal(err)
+		}
+		//records.ToMaps()
+		// Process the records
+		fmt.Println(records)
+	}
 
 	return nil
 }
