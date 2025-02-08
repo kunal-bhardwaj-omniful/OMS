@@ -61,7 +61,6 @@ func PushEmailMessageToSQS(
 
 	err = publisher.Publish(ctx, m)
 	if err != nil {
-		fmt.Println(100)
 		cusErr = error2.NewCustomError(error3.SqsPublishErr, err.Error())
 		return
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 type Repository interface {
-	SaveOrder(record []string) error
+	SaveOrder(order interface{}) error
 }
 
 // Inter
@@ -33,15 +33,15 @@ func NewRepository(db *mongo.Client) Repository {
 	return repo
 }
 
-func (r *repository) SaveOrder(record []string) error {
+func (r *repository) SaveOrder(order interface{}) error {
 	// Access the database and collection
 	collection := r.db.Database("orders").Collection("orders")
 
 	// Create a document from the CSV record
 	document := bson.D{
-		{"column1", record[0]},
-		{"column2", record[1]},
-		{"column3", record[2]},
+		//{"column1", record[0]},
+		//{"column2", record[1]},
+		//{"column3", record[2]},
 		// Add more fields as needed based on your CSV structure
 	}
 

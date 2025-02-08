@@ -13,6 +13,7 @@ import (
 
 type Service interface {
 	ProcessOrder(filePath string) error
+	SaveOrderinDb(order interface{}) error
 }
 
 type service struct {
@@ -78,4 +79,9 @@ func (s *service) ProcessOrder(filePath string) error {
 	//}
 
 	return nil
+}
+
+func (s *service) SaveOrderinDb(order interface{}) error {
+	err := s.repo.SaveOrder(order)
+	return err
 }

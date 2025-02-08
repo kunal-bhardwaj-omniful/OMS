@@ -10,7 +10,8 @@ import (
 	"oms/initialize"
 	psqs "oms/pkg/sqs"
 	"oms/router"
-	sqs "oms/utils/sqs"
+	"oms/utils/kafka"
+	"oms/utils/sqs"
 	"os"
 	"time"
 )
@@ -41,9 +42,16 @@ func main() {
 	}
 
 	psqs.IntiializeSqs(ctx)
-
 	sqs.StartConsumerWorker(ctx)
 
+	kafka.InitializeKafka()
+	go kafka.StartConsumerKafka()
+	func() {
+		time.Sleep(time.Millisecond * 100)
+		kafka.PushOrderToKafka()
+
+	}()
+	//time.Sleep(time.Second * 2)
 	runHttp(ctx)
 
 }

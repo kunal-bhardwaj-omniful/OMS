@@ -15,3 +15,13 @@ type BulkOrderEvent struct {
 	User        User      `json:"user"`        // User who triggered the request
 	RequestTime time.Time `json:"requestTime"` // Timestamp of the request
 }
+
+type Order struct {
+	HubID string `json:"hubID"`
+	SkuId string `json:"skuId"`
+	Qty   int    `json:"qty"`
+}
+
+//func  SaveOrderinDb(order Order) {
+//	c.service.SaveOrderinDb(order)
+//}
