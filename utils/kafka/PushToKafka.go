@@ -2,9 +2,11 @@ package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/omniful/go_commons/kafka"
 	"github.com/omniful/go_commons/pubsub"
+	"oms/domain/models"
 	pkafka "oms/pkg/kafka"
 )
 
@@ -24,29 +26,36 @@ func InitializeKafka(
 
 }
 
-func PushOrderToKafka() {
+func PushOrderToKafka(order *models.Order) {
 	fmt.Println("pushed Start")
 
 	producer := pkafka.Get()
+
+	byteData, err := json.Marshal(order)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
 	// Create message with key for FIFO ordering
 	msg := &pubsub.Message{
 		Topic: "my-topic",
 		// Key is crucial for maintaining FIFO ordering
 		// Messages with the same key will be delivered to the same partition in order
 		Key:   "customer-123",
-		Value: []byte("Hello Kafka!"),
-		Headers: map[string]string{
-			"custom-header": "value",
-			// Note: HeaderXOmnifulRequestID will be automatically added
-			// from context if present
-		},
+		Value: byteData,
+		//Headers: map[string]string{
+		//	"custom-header": "value",
+		//	// Note: HeaderXOmnifulRequestID will be automatically added
+		//	// from context if present
+		//},
 	}
 
 	// Context with request ID
 	ctx := context.WithValue(context.Background(), "request_id", "req-123")
 
 	// Synchronous publish - HeaderXOmnifulRequestID will be automatically added
-	err := producer.Publish(ctx, msg)
+	err = producer.Publish(ctx, msg)
 	if err != nil {
 		panic(err)
 	}

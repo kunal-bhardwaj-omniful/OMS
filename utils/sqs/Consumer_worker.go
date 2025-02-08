@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo"
+
 	//"github.com/google/uuid"
 	"github.com/omniful/go_commons/csv"
 	"github.com/omniful/go_commons/http"
@@ -13,17 +15,14 @@ import (
 	interservice_client "github.com/omniful/go_commons/interservice-client"
 	"github.com/omniful/go_commons/sqs"
 	"log"
-
 	"oms/domain/models"
+	pmongo "oms/pkg/mongo"
 	psqs "oms/pkg/sqs"
+	"oms/utils/kafka"
 	"time"
 )
 
 const getBySkuId = "/sku/"
-
-var (
-// service ser1.Service
-)
 
 //var (
 //	once                  sync.Once
@@ -34,6 +33,18 @@ var (
 //	type Client struct {
 //		*http.Client
 //	}
+
+type SKUResponse struct {
+	Data    SKUData `json:"data"`
+	Message string  `json:"message"`
+	Status  string  `json:"status"`
+}
+
+// SKUData represents the data object with only the ID field.
+type SKUData struct {
+	ID string `json:"id"`
+}
+
 type ExampleHandler struct{}
 
 func (h *ExampleHandler) Process(ctx context.Context, message *[]sqs.Message) error {
@@ -90,7 +101,7 @@ func (h *ExampleHandler) Handle(msg *sqs.Message) error {
 		//m := records.ToMaps(headers)
 		// Process the records
 
-		fmt.Println(records)
+		//fmt.Println(records)
 
 		ctx := context.TODO()
 		//client, err := NewClient(ctx)
@@ -110,53 +121,66 @@ func (h *ExampleHandler) Handle(msg *sqs.Message) error {
 			panic(err)
 		}
 
+		// Todo write invalid orders in new csv
+		//
+		//
+		//dest := csv.Destination{}
+		//dest.SetFileName("rejectedOrder.csv")
+		//wr, _ := csv.NewCommonCSVWriter()
+		//wr.SetDestination(dest)
+
 		for _, v := range records {
 
-			sku_id := v[1]
-			hub_id := v[2]
+			sku_id := v[0]
+			hub_id := v[1]
 
 			fmt.Printf("sku_id %s and hub_id %s", sku_id, hub_id)
 
 			res, err1 := GetSku(ctx, sku_id, client)
 			//fmt.Println("FSDFKJFD")
-			fmt.Println(err1)
-			if err1 != nil {
-				fmt.Println("2")
+			//fmt.Println(err1)
+			if err1 == nil {
+				// VALID
+				fmt.Println("process SKU valid ", res.Data)
+			} else {
+				// invalid sku
 
-				fmt.Printf("Error from wms service %w", err)
-				fmt.Println("id  not  present in wms service")
-				//return
+				continue
 			}
 
-			data, ok := res.([]byte)
-			if !ok {
-				fmt.Println("Error: res is not of type []byte")
-				//return
+			res, err1 = GetHub(ctx, hub_id, client)
+			//fmt.Println("FSDFKJFD")
+			//fmt.Println(err1)
+			if err1 == nil {
+				// VALID
+				fmt.Println("process hub valid valid ", res.Data)
+			} else {
+				// invalid hub
+				continue
 			}
 
-			// Define a map to store the decoded JSON data
-			var result map[string]interface{}
+			//reached this line means valid hubid and skuid
 
-			// Unmarshal JSON into the map
-			err := json.Unmarshal(data, &result)
+			// put in mongoDb with status onHold
+
+			fmt.Println("VALID ORDER")
+
+			//save order to dB
+			client := pmongo.GetMongoClient()
+
+			order := &models.Order{
+				HubID:  hub_id,
+				SkuId:  sku_id,
+				Qty:    0,
+				Status: "onHold",
+			}
+			err = SaveOrder(client, order)
+
 			if err != nil {
-				fmt.Println("Error decoding JSON:", err)
-				//return
+				fmt.Println("ERROR IN SAVING MDB ", err)
 			}
-
-			// Print the decoded JSON data
-			fmt.Println("Decoded JSON:", result)
-
-			fmt.Println("res from isvc ", res)
-			//response.NewSuccessResponse(res)
-			//fmt.Println("body", json.Unmarshal( []byte(res),&sfsd )
-
-			// cyclic dependency
-			//order1.SaveOrderinDb(models.Order{
-			//	HubID: hub_id,
-			//	SkuId: sku_id,
-			//	Qty:   0,
-			//})
+			//push order event to kafka
+			kafka.PushOrderToKafka(order)
 
 		}
 
@@ -166,32 +190,100 @@ func (h *ExampleHandler) Handle(msg *sqs.Message) error {
 	return nil
 }
 
-func GetSku(ctx context.Context, skuID string, client *interservice_client.Client) (res interface{}, err *interservice_client.Error) {
-	//request := &http.Request{
-	//	Url: fmt.Sprintf("/sku/%s", skuID),
-	//}
+func SaveOrder(client *mongo.Client, order *models.Order) error {
+	collection := client.Database("orders").Collection("orders")
 
-	//var skuData interface{} // Use proper struct instead of `interface{}`
-	//response, err := client.Get(request, &skuData)
+	// Ensure default status is set
+	if order.Status == "" {
+		order.Status = "onhold"
+	}
 
-	fmt.Println("ISVC START")
+	// Insert into MongoDB
+	res, err := collection.InsertOne(context.Background(), order)
+	if err != nil {
+		return fmt.Errorf("failed to insert document: %v", err)
+	}
 
-	res, err = client.Execute(ctx,
-		http.APIGet,
+	fmt.Println("saved in mongo and id ", res.InsertedID)
+	return nil
+}
+
+func GetHub(ctx context.Context, hubID string, client *interservice_client.Client) (*SKUResponse, *interservice_client.Error) {
+
+	//fmt.Println("ISVC START")
+
+	var skuRes SKUResponse
+
+	res, err := client.Get(
 		&http.Request{
-			Url: fmt.Sprintf("/sku/%s", skuID),
+			Url: fmt.Sprintf("/hub/%s", hubID),
 			//Headers: headers,
-		},
-		&res,
-	)
+		}, &skuRes)
+
+	if err != nil {
+		return &skuRes, err
+	}
+
+	//fmt.Println(res.StatusCode())
+
+	err1 := json.Unmarshal(res.Body(), &skuRes)
+	if err1 != nil {
+		return &skuRes, &interservice_client.Error{
+			Message:    "",
+			Errors:     nil,
+			StatusCode: 404,
+			Data:       nil,
+		}
+	}
+
+	fmt.Println(skuRes)
 
 	fmt.Println("ISVC END")
 
 	if err != nil {
-		return
+		return &skuRes, err
 	}
 
-	return
+	return &skuRes, nil
+}
+
+func GetSku(ctx context.Context, skuID string, client *interservice_client.Client) (*SKUResponse, *interservice_client.Error) {
+
+	//fmt.Println("ISVC START")
+
+	var skuRes SKUResponse
+
+	res, err := client.Get(
+		&http.Request{
+			Url: fmt.Sprintf("/sku/%s", skuID),
+			//Headers: headers,
+		}, &skuRes)
+
+	if err != nil {
+		return &skuRes, err
+	}
+
+	//fmt.Println(res.StatusCode())
+
+	err1 := json.Unmarshal(res.Body(), &skuRes)
+	if err1 != nil {
+		return &skuRes, &interservice_client.Error{
+			Message:    "",
+			Errors:     nil,
+			StatusCode: 404,
+			Data:       nil,
+		}
+	}
+
+	fmt.Println(skuRes)
+
+	fmt.Println("ISVC END")
+
+	if err != nil {
+		return &skuRes, err
+	}
+
+	return &skuRes, nil
 }
 
 //func NewClient(ctx context.Context) (*Client, error) {

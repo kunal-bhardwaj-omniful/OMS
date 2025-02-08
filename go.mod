@@ -7,14 +7,11 @@ replace github.com/omniful/go_commons => C:/Users/kunal/Desktop/go_commons
 require (
 	github.com/aws/aws-sdk-go v1.44.140
 	github.com/gin-gonic/gin v1.8.1
-	github.com/google/uuid v1.6.0
 	github.com/omniful/go_commons v0.0.0-00010101000000-000000000000
 	go.mongodb.org/mongo-driver v1.17.2
-	gorm.io/datatypes v1.2.5
 )
 
 require (
-	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/IBM/sarama v1.43.1 // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
@@ -33,8 +30,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.32.3 // indirect
 	github.com/aws/smithy-go v1.22.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/eapache/go-resiliency v1.6.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
@@ -42,11 +41,12 @@ require (
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
+	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
-	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
@@ -68,6 +68,7 @@ require (
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/newrelic/go-agent/v3 v3.27.0 // indirect
 	github.com/newrelic/go-agent/v3/integrations/nrpkgerrors v1.1.0 // indirect
+	github.com/newrelic/go-agent/v3/integrations/nrredis-v8 v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -95,6 +96,5 @@ require (
 	gopkg.in/guregu/null.v4 v4.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/mysql v1.5.6 // indirect
 	gorm.io/gorm v1.25.11 // indirect
 )

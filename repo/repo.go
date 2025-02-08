@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"oms/domain/models"
+
 	//"github.com/omniful/go_commons/db/sql/postgres"
 	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
 )
 
 type Repository interface {
-	SaveOrder(order interface{}) error
+	SaveOrder(order models.Order) error
 }
 
 // Inter
@@ -33,7 +35,7 @@ func NewRepository(db *mongo.Client) Repository {
 	return repo
 }
 
-func (r *repository) SaveOrder(order interface{}) error {
+func (r *repository) SaveOrder(order models.Order) error {
 	// Access the database and collection
 	collection := r.db.Database("orders").Collection("orders")
 

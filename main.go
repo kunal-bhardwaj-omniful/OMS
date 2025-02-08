@@ -8,6 +8,7 @@ import (
 	"github.com/omniful/go_commons/shutdown"
 	"go.mongodb.org/mongo-driver/mongo"
 	"oms/initialize"
+	pmongo "oms/pkg/mongo"
 	psqs "oms/pkg/sqs"
 	"oms/router"
 	"oms/utils/kafka"
@@ -40,18 +41,17 @@ func main() {
 	if err != nil {
 		log.Panicf("Error while running mongo client, err: %v", err)
 	}
+	initialize.InitializeLog(ctx)
+
+	pmongo.SetMongoClient(client)
+	initialize.InitializeRedis()
 
 	psqs.IntiializeSqs(ctx)
 	sqs.StartConsumerWorker(ctx)
 
 	kafka.InitializeKafka()
 	go kafka.StartConsumerKafka()
-	func() {
-		time.Sleep(time.Millisecond * 100)
-		kafka.PushOrderToKafka()
 
-	}()
-	//time.Sleep(time.Second * 2)
 	runHttp(ctx)
 
 }
@@ -59,12 +59,6 @@ func main() {
 func runHttp(ctx context.Context) {
 
 	server := http.InitializeServer(config.GetString(ctx, "server.port"), 10*time.Second, 10*time.Second, 70*time.Second)
-
-	//err := router.Initialize(ctx, server)
-	//if err != nil {
-	//	log.Errorf(err.Error())
-	//	panic(err)
-	//}
 
 	err := router.InternalRoutes(ctx, server, client)
 	if err != nil {

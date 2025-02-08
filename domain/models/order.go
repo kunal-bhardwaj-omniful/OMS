@@ -17,11 +17,8 @@ type BulkOrderEvent struct {
 }
 
 type Order struct {
-	HubID string `json:"hubID"`
-	SkuId string `json:"skuId"`
-	Qty   int    `json:"qty"`
+	HubID  string `json:"hubID"`
+	SkuId  string `json:"skuId"`
+	Qty    int    `json:"qty"`
+	Status string `json:"status"`
 }
-
-//func  SaveOrderinDb(order Order) {
-//	c.service.SaveOrderinDb(order)
-//}
