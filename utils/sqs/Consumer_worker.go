@@ -169,11 +169,15 @@ func (h *ExampleHandler) Handle(msg *sqs.Message) error {
 			client := pmongo.GetMongoClient()
 
 			order := &models.Order{
-				HubID:  hub_id,
-				SkuId:  sku_id,
-				Qty:    0,
-				Status: "onHold",
+				HubID:     hub_id,
+				SkuId:     sku_id,
+				Qty:       0,
+				Status:    "onHold",
+				CreatedAt: time.Now(),
+				TenantID:  "2000",
+				SellerID:  "1000",
 			}
+
 			err = SaveOrder(client, order)
 
 			if err != nil {

@@ -17,8 +17,11 @@ type BulkOrderEvent struct {
 }
 
 type Order struct {
-	HubID  string `json:"hubID"`
-	SkuId  string `json:"skuId"`
-	Qty    int    `json:"qty"`
-	Status string `json:"status"`
+	HubID     string    `json:"hub_id"`
+	SkuId     string    `json:"sku_id"`
+	TenantID  string    `json:"tenant_id"`
+	SellerID  string    `json:"seller_id"`
+	Qty       int       `json:"qty"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
 }

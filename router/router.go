@@ -21,7 +21,7 @@ func InternalRoutes(ctx context.Context, s *http.Server, client *mongo.Client) (
 	controller := order.NewController(newService)
 
 	rtr.POST("/order", controller.HandleOrders())
+	rtr.GET("/order", controller.HandleGetOrders())
 
-	//rtr.GET("order")
 	return
 }
